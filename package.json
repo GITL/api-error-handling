@@ -1,0 +1,15 @@
+{
+  "name": "smartcar",
+  "version": "1.0.0",
+  "description": "Smartcar Backend Coding Challenge",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/gilkwak/smartcar.git"
+  },
+  "author": "Gil Kwak",
+  "license": "ISC"
+}
