@@ -1,15 +1,23 @@
 {
-  "name": "smartcar",
+  "name": "api_error_handling",
   "version": "1.0.0",
   "description": "Smartcar Backend Coding Challenge",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "github.com/gilkwak/smartcar.git"
+    "url": "git+https://github.com/gilkwak/api-error-handling.git"
   },
   "author": "Gil Kwak",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gilkwak/api-error-handling/issues"
+  },
+  "homepage": "https://github.com/gilkwak/api-error-handling#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "request": "^2.83.0"
+  }
 }
