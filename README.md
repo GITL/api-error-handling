@@ -19,6 +19,8 @@ curl http://gmapi.azurewebsites.net/getVehicleInfoService -X POST -H 'Content-Ty
 
 curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "START"}' -H 'Content-Type: application/json'
 
+curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "STOP"}' -H 'Content-Type: application/json'
+
 POST /getVehicleInfoService
 Content-Type: application/json
 {

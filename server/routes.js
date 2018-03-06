@@ -3,8 +3,10 @@ const requestHandler = require('./requestHandler.js');
 
 
 router.get('/:id', requestHandler.vehicleAxios);
+// router.get('/:id', requestHandler.vehicleRequest);
 
-router.post('/:id/engine', requestHandler.engine);
+router.post('/:id/engine', requestHandler.engineAxios);
+// router.post('/:id/engine', requestHandler.engineRequest);
 
 router.get('/:id/doors', requestHandler.security);
 

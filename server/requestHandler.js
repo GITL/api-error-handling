@@ -2,8 +2,6 @@ const requestModule = require('./requestModule.js');
 
 let vehicleAxios = (req, res) => {
   // validate req.params & req.params.id
-
-
   // replace options with options subroutine
   let id = req.params.id;
   let options = {
@@ -68,7 +66,36 @@ let vehicleRequest = (req, res) => {
   });
 }
 
-let engine = (req, res) => {
+let engineAxios = (req, res) => {
+  // let id = req.url.replace('/', '');
+  // console.log('engine, id=', req.params.id, req.body.action);
+  let id = req.params.id;
+  let command = req.body.action;
+
+  let options = {
+    url: 'http://gmapi.azurewebsites.net/actionEngineService',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "id": id,
+      "command": command + '_VEHICLE',
+      "responseType": "JSON"
+    }),
+  };
+
+  requestModule.makeRequest(options, (data) => {
+      data = JSON.parse(data);
+    // console.log('data=', data);
+    let result = {"status": data.actionResult.status === "EXECUTED" ? "success" : "error"}
+    // console.log(result);
+    res.statusCode = 200;
+    res.send(result);
+  });
+};
+
+let engineRequest = (req, res) => {
   // let id = req.url.replace('/', '');
   // console.log('engine, id=', req.params.id, req.body.action);
   let id = req.params.id;
@@ -121,6 +148,7 @@ module.exports.vehicleRequest = vehicleRequest;
 module.exports.security = security;
 module.exports.fuel = fuel;
 module.exports.battery = battery;
-module.exports.engine = engine;
+module.exports.engineAxios = engineAxios;
+module.exports.engineRequest = engineRequest;
 module.exports.catchall = catchall;
 
