@@ -1,7 +1,19 @@
 const router = require('express').Router();
-// const controller = require('./controllers');
+const requestHandler = require('./requestHandler.js');
 
-// router.get('/', controller.gm.get);
-// router.port('/', controller.gm.post);
+
+router.get('/:id', requestHandler.vehicleAxios);
+
+router.post('/:id/engine', requestHandler.engine);
+
+router.get('/:id/doors', requestHandler.security);
+
+router.get('/:id/fuel', requestHandler.fuel);
+
+router.get('/:id/battery', requestHandler.battery);
+
+// catch invalid endpoint
+router.get('', requestHandler.catchall);
+router.get('/:id*', requestHandler.catchall);
 
 module.exports = router;

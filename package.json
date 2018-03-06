@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/gilkwak/api-error-handling#readme",
   "dependencies": {
+    "axios": "^0.18.0",
     "express": "^4.16.2",
     "request": "^2.83.0"
   }
