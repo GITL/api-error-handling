@@ -9,8 +9,8 @@ let vehicleAxios = (req, res) => {
   let options = {
     url: 'getVehicleInfoService',
     baseURL: 'http://gmapi.azurewebsites.net/',
-    // data: JSON.stringify({"id": id, "responseType": "JSON"}),
-    data: {"id": id, "responseType": "JSON"},
+    data: JSON.stringify({"id": id, "responseType": "JSON"}),
+    // data: {"id": id, "responseType": "JSON"},
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     timeout: 3000,
@@ -47,6 +47,8 @@ let vehicleAxios = (req, res) => {
 
     // replace with response handler subroutines
     let result = '';
+    data = JSON.parse( '{"service": "getVehicleInfo", "status": "200", "data": { "vin": { "type": "String", "value": "123123412412"  "color": { "type": "String", "value": "Metallic Silver" }, "fourDoorSedan": { "type": "Boolean", "value": "True" }, "twoDoorCoupe": { "type": "Boolean", "value": "False" }, "driveTrain": { "type": "String", "value": "v8" } } }' );
+
     try {
       result = {
         "vin": data.data.vin.value,
@@ -59,7 +61,7 @@ let vehicleAxios = (req, res) => {
       console.log('data0', data);
       console.log('Error6 ', error);
     }
-    // console.log('data2', result);
+    console.log('data2', result);
     res.statusCode = 200;
     res.send(result);
   });

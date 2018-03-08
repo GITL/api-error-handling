@@ -29,7 +29,7 @@ let makeRequest = (options, callback) => {
 }
 
 let makeRequestAxios = (config, callback) => {
-  // console.log("makeRequestAxios");
+  console.log("makeRequestAxios");
   // axios.post('http://127.0.0.1:3001/vehicles/test', data: {"id": id, "responseType": "JSON"}, headers: { 'Content-Type': 'application/json' });
 
   axios( config )
