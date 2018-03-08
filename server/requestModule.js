@@ -2,6 +2,22 @@ const request = require('request');
 const axios = require('axios');
 // wrap makeRequest with try catch
 
+
+
+// let doAxiosRetry = (options, callback) => {
+//   console.log('in doAxiosRetry');
+
+//   axios.get('https://timercheck.io/wework' , function(err, res, body) {
+//     console.log('axios retry', body);
+//     // handle error
+//       // call error handler with error code
+
+//     callback(body);
+//   });
+// }
+
+
+
 let makeRequest = (options, callback) => {
   request(options, function(err, res, body) {
       // console.log('returned from GM api request', body);
@@ -13,11 +29,12 @@ let makeRequest = (options, callback) => {
 }
 
 let makeRequestAxios = (config, callback) => {
-  console.log("there");
+  // console.log("makeRequestAxios");
+  // axios.post('http://127.0.0.1:3001/vehicles/test', data: {"id": id, "responseType": "JSON"}, headers: { 'Content-Type': 'application/json' });
+
   axios( config )
     .then(function (response) {
-      // console.log('Error0 ', response.data);
-      // callback(response.data);
+      callback(response.data);
     })
     .catch(function (error) {
       // console.log('Error1 ', error.toString());
@@ -44,8 +61,6 @@ let testRequest = (config, callback) => {
   // console.log('there 2');
   axios( config )
     .then(function (response) {
-      // var data = JSON.parse(response.data);
-      // console.log('there 3', response.data);
       callback(response.data);
     })
     .catch(function (error) {
@@ -60,7 +75,7 @@ let testRequest = (config, callback) => {
         // The request was made but no response was received
         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
         // http.ClientRequest in node.js
-        console.log('Error 3', error.request);
+        // console.log('Error 3', error.request);
       } else {
         // Something happened in setting up the request that triggered an Error
         console.log('Error 4, invalid json', error.message);
@@ -69,53 +84,9 @@ let testRequest = (config, callback) => {
     });
 }
 
-// axios.get('/user/12345')
-//   .then(function(response) {
-//     console.log(response.data);
-//     console.log(response.status);
-//     console.log(response.statusText);
-//     console.log(response.headers);
-//     console.log(response.config);
-//   });
-
-// let getVehicleInfoService = (id, callback) => {
-//   // console.log('making GM api call');
-//   let options = {
-//     url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
-//     body: JSON.stringify({"id": id, "responseType": "JSON"}),
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json'
-//     }
-//   };
-//   request.post(options, function(err, res, body) {
-//       console.log('returned from GM api request', body);
-//       callback(body);
-//   });
-// };
-
-
-// let actionEngineService = (id, command, callback) => {
-//   console.log('making GM actionEngineService call');
-//   let options = {
-//     url: 'http://gmapi.azurewebsites.net/actionEngineService',
-//     method: 'POST',
-//     body: JSON.stringify({
-//       "id": id,
-//       "command": command + '_VEHICLE',
-//       "responseType": "JSON"
-//     }),
-//     headers: {
-//       'Content-Type': 'application/json'
-//     }
-//   };
-//   request(options, function(err, res, body) {
-//       console.log('returned from GM actionEngineService request', body);
-//       callback(body);
-//   });
-// };
 module.exports.makeRequestAxios = makeRequestAxios;
 module.exports.makeRequest = makeRequest;
 module.exports.testRequest = testRequest;
-// module.exports.getVehicleInfoService = getVehicleInfoService;
-// module.exports.actionEngineService = actionEngineService;
+// module.exports.doAxiosRetry = doAxiosRetry
+
+

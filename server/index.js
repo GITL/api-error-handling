@@ -5,6 +5,8 @@ const app = express();
 
 const GM = require('./requestModule.js');
 
+// const fibo = require('./axios.js');
+
 // use middleware to parse incoming data from post
 const bodyparser = require('body-parser');
 app.use(bodyparser.json());
@@ -13,7 +15,7 @@ app.use(bodyparser.json());
 const router = require('./routes.js');
 
 app.use(function(req, res, next){
-  res.setTimeout(10000, function(){
+  res.setTimeout(30000, function(){
     console.log('Request has timed out.');
       res.sendStatus(408)
       // res.send(408);
@@ -41,7 +43,6 @@ app.use(express.static(__dirname + '../client/dist'));
 app.set('port', 3000);
 app.listen(app.get('port'));
 console.log('Listening on port ', app.get('port'));
-
 
 // function haltOnTimedout(req, res, next){
 //   if (!req.timedout) next();

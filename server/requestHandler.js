@@ -1,8 +1,10 @@
 const requestModule = require('./requestModule.js');
 
+
 let vehicleAxios = (req, res) => {
   // validate req.params & req.params.id
   // replace options with options subroutine
+  // console.log('vehicleAxios');
   let id = req.params.id;
   let options = {
     url: 'getVehicleInfoService',
@@ -56,13 +58,10 @@ let vehicleAxios = (req, res) => {
       // 404: Service not found
       console.log('data0', data);
       console.log('Error6 ', error);
-      // res.statusCode = 400;
-      // res.send(result);
     }
     // console.log('data2', result);
     res.statusCode = 200;
     res.send(result);
-  // }, console.log('end'), res.send());
   });
 }
 
@@ -101,8 +100,6 @@ let vehicleRequest = (req, res) => {
 }
 
 let engineAxios = (req, res) => {
-  // let id = req.url.replace('/', '');
-  // console.log('engine, id=', req.params.id, req.body.action);
   let id = req.params.id;
   let command = req.body.action;
 
@@ -117,11 +114,6 @@ let engineAxios = (req, res) => {
       "command": command + '_VEHICLE',
       "responseType": "JSON"
     },
-    // data: JSON.stringify({
-    //   "id": id,
-    //   "command": command + '_VEHICLE',
-    //   "responseType": "JSON"
-    // }),
   };
 
   requestModule.makeRequestAxios(options, (data) => {
@@ -162,69 +154,29 @@ let engineRequest = (req, res) => {
   });
 };
 
+
 let testServer = (req, res) => {
-  // console.log('here1');
-  // validate req.params & req.params.id
+  // // validate req.params & req.params.id
+  // console.log('starting testServer');
   // replace options with options subroutine
   let id = "1235";//req.params.id;
   let options = {
-    url: 'vehicles/test',
-    baseURL: 'http://127.0.0.1:3001/',
-    // data: JSON.stringify({"id": id, "responseType": "JSON"}),
+    // url: 'vehicles/test',
+    // baseURL: 'http://127.0.0.1:3001/',
     data: {"id": id, "responseType": "JSON"},
-    method: 'POST',
+    // method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    timeout: 3000,
-    // transformResponse: [function (data) {
-    //   // Do whatever you want to transform the data
-    //   data = JSON.parse(data);
-    //   let result = {
-    //     "vin": data.data.vin.value,
-    //     "color": data.data.color.value,
-    //     "doorCount": data.data.fourDoorSedan.value ? 4 : 2,
-    //     "driveTrain": data.data.driveTrain.value
-    //   }
-    //   return result;
-    // }],
-    // withCredentials: false, // default
-    // responseType: 'application/text', // default
-    // xsrfCookieName: 'XSRF-TOKEN', // default
-    // xsrfHeaderName: 'X-XSRF-TOKEN', // default
-    // maxContentLength: 1000,
-    // validateStatus: function (status) {
-    //   return status >= 200 && status < 300; // default
-    // },
+    timeout: 30000,
   };
+
+  // requestModule.doAxiosRetry(options, (data) => {
+  //   console.log('doAxiosRetry returned');
+  //   res.statusCode = 200;
+  //   res.send(result);
+  // });
+
   requestModule.testRequest(options, (data) => {
     // console.log('here 2');
-
-    // replace with response handler subroutines
-    // let result = {
-    //   "service": "getVehicleInfo",
-    //   "status": "200",
-    //   "data": {
-    //     "vin": {
-    //       "type": "String",
-    //       "value": "123123412412"
-    //     },
-    //     "color": {
-    //       "type": "String",
-    //       "value": "Metallic Silver"
-    //     },
-    //     "fourDoorSedan": {
-    //       "type": "Boolean",
-    //       "value": "True"
-    //     },
-    //     "twoDoorCoupe": {
-    //       "type": "Boolean",
-    //       "value": "False"
-    //     },
-    //     "driveTrain": {
-    //       "type": "String",
-    //       "value": "v8"
-    //     }
-    //   }
-    // };
     try {
       result = {
         "vin": data.data.vin.value,
@@ -235,7 +187,8 @@ let testServer = (req, res) => {
     } catch (error) {
       // 404: Service not found
       // console.log('data0', data);
-      console.log('error in parsing data');
+      // res.statusCode = 400;
+      console.log('error in parsing response json', res.statusCode );
     }
     res.statusCode = 200;
     res.send(result);
