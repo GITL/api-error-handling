@@ -1,3 +1,75 @@
+failed to connect to server
+failed to resolve hostname
+invalid user input
+request timeout
+server returned a 500 response
+socket hang-up
+system is out of memory
+
+ERRORS:
+ECONNRESET, ENOTFOUND, ESOCKETTIMEDOUT, ETIMEDOUT, ECONNREFUSED, EHOSTUNREACH, EPIPE, EAI_AGAIN,
+HTTP 5xx error
+
+
+if unknown issue happens, may need to restart the server
+
+
+
+    //throwing an Error from typical function, whether sync or async
+ if(!productToAdd)
+ throw new Error("How can I add new product when no value provided?");
+
+//'throwing' an Error from EventEmitter
+const myEmitter = new MyEmitter();
+myEmitter.emit('error', new Error('whoops!'));
+
+//'throwing' an Error from a Promise
+ return new promise(function (resolve, reject) {
+ DAL.getProduct(productToAdd.id).then((existingProduct) =>{
+ if(existingProduct != null)
+ return reject(new Error("Why fooling us and trying to add an existing product?"));
+
+
+
+
+const http = require('http');
+const express = require('express');
+const MessagingResponse = require('twilio').twiml.MessagingResponse;
+
+const app = express();
+
+app.post('/sms', (req, res) => {
+  const twiml = new MessagingResponse();
+
+  twiml.message('The Robots are coming! Head for the hills!');
+
+  res.writeHead(200, {'Content-Type': 'text/xml'});
+  res.end(twiml.toString());
+});
+
+http.createServer(app).listen(1337, () => {
+  console.log('Express server listening on port 1337');
+});
+
+
+
+
+
+
+
+Accept and Content-Type headers
+
+
+{
+  "code": 21211,
+  "message": "The 'To' number 5551234567 is not a valid phone number.",
+  "more_info": "https://www.twilio.com/docs/errors/21211",
+  "status": 400
+}
+
+
+
+
 When a collision first occurs, send a “Jamming signal” to prevent further data being sent.
 Resend a frame after either 0 seconds or 51.2μs, chosen at random.
 If that fails, resend the frame after either 0s, 51.2μs, 102.4μs, or 153.6μs.

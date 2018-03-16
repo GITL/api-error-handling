@@ -15,7 +15,7 @@ app.use(bodyparser.json());
 const router = require('./routes.js');
 
 app.use(function(req, res, next){
-  res.setTimeout(30000, function(){
+  res.setTimeout(5000, function(){
     console.log('Request has timed out.');
       res.sendStatus(408)
       // res.send(408);
