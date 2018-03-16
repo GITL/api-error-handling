@@ -5,6 +5,7 @@ function myRetryStrategy(err, response, body){
   // console.log('in promises body=', body);
   // console.log('in promises reponse.body=', response.body);
   // console.log('in promises reponse.body.status=', response.body.status);
+  // console.log('in promises reponse.status=', response.status);
 
   // retry the request if we had an error or if the response was a 'Bad Gateway'
   if (typeof body !== "object") {
@@ -43,38 +44,44 @@ function myRetryStrategy(err, response, body){
   return err || response.statusCode === 502 || response.statusCode > 299;
 }
 
+let getVehicleInfoService = (req, res) => {
+  // console.log('here');
+  request({
+    url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
+    json: true,                                 // must be present
+    method: 'POST',                             // must be present
+    body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
+    headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
-request({
-  // url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
-  // json: true,                                 // must be present
-  // method: 'POST',                             // must be present
-  // body: {"id": "1234", "responseType": "JSON"},     // must be JSON with quotes
-  // headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
+    // url: 'http://127.0.0.1:3001/vehicles/test',
+    // // url: 'http://8.8.8.8:8080/',
+    // json: true,
+    // method: "POST",
+    // body: {"id": "1235", "responseType": "JSON"},
+    // headers: { "Content-Type": "application/json" },
 
-  url: 'http://127.0.0.1:3001/vehicles/test',
-  // url: 'http://8.8.8.8:8080/',
-  json: true,
-  method: "POST",
-  body: {"id": "1235", "responseType": "JSON"},
-  headers: { "Content-Type": "application/json" },
+    // The below parameters are specific to request-retry
+    maxAttempts: 3,   // (default) try 5 times
+    retryDelay: 300,  // (default) wait for 5s before trying again
+    retryStrategy: myRetryStrategy, // (default) retry on 5xx or network errors
+    // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
+    fullResponse: true // (default) To resolve the promise with the full response or just the body
+  })
+  .then(function (response) {
+    // response = The full response object or just the body
+    // console.log('in promises reponse.body', response.body);
+    console.log('in promises reponse.body.status', response.body.status); // correct
+    // console.log('in promises reponse', response.statusCode); // may not be correct
+    res.statusCode = 200;
+    res.send(response.body);
 
-  // The below parameters are specific to request-retry
-  maxAttempts: 3,   // (default) try 5 times
-  retryDelay: 300,  // (default) wait for 5s before trying again
-  retryStrategy: myRetryStrategy, // (default) retry on 5xx or network errors
-  // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
-  fullResponse: true // (default) To resolve the promise with the full response or just the body
-})
-.then(function (response) {
-  // response = The full response object or just the body
-  // console.log('in promises reponse.body', response.body);
-  console.log('in promises reponse.body.status', response.body.status); // correct
-  // console.log('in promises reponse', response.statusCode); // may not be correct
-})
-.catch(function(error) {
-  // error = Any occurred error
-  console.log('in promises error', error);
-})
+  })
+  .catch(function(error) {
+    // error = Any occurred error
+    console.log('in promises error', error.code);
+  })
+}
+
 
 // no server or server refused connection(wrong port)
 // { Error: connect ECONNREFUSED 127.0.0.1:3001
@@ -250,3 +257,4 @@ function isValidResponse(body) {
 
 // var request = require('requestretry').defaults({ json: true, retryStrategy: myRetryStrategy });
 
+module.exports.getVehicleInfoService = getVehicleInfoService;

@@ -15,6 +15,11 @@ if unknown issue happens, may need to restart the server
 
 
 
+res.status(500).send({ error: "boo:(" });
+
+
+
+
     //throwing an Error from typical function, whether sync or async
  if(!productToAdd)
  throw new Error("How can I add new product when no value provided?");

@@ -2,7 +2,11 @@ const router = require('express').Router();
 const requestHandler = require('./requestHandler.js');
 const handler = require('./axios.js');
 
-router.get('/:id', requestHandler.vehicleAxios);
+const retry = require('./retry.js');
+
+
+router.get('/:id', retry.getVehicleInfoService);
+// router.get('/:id', requestHandler.vehicleAxios);
 // router.get('/:id', requestHandler.vehicleRequest);
 
 router.post('/:id/engine', requestHandler.engineAxios);
