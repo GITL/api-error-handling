@@ -1,8 +1,15 @@
 const request = require('requestretry');
-
 const delay = 200; // start retrying after 200 ms of first try
 const TWO = 2;
 
+const logger = console;
+
+process.on('uncaughtException', (err) => {
+    logger.log('whoops! There was an uncaught error', err);
+    // do a graceful shutdown,
+    // close the database connection etc.
+    process.exit(1);
+});
 /**
  * @param  {Null | Object} err
  * @param  {Object} response
@@ -20,7 +27,9 @@ function expDelayStrategy(err, response, body){
       multiple = err.attempts;
     }
     backoff = delay * Math.pow(TWO, multiple - 1);
+    backoff += Math.floor(Math.random() * backoff * 0.2 - backoff * 0.1)
     message = 'exponential backing off ' + backoff + ' ms';
+
   } catch(e) {
     // console.error('undefined error')
     multiple = Math.floor(Math.random() * 4 + 1);
@@ -37,15 +46,15 @@ function expDelayStrategy(err, response, body){
 
 function vehicleInfoRetryStrategy(err, response, body){
   // retry the request if we had an error or if the response was a 'Bad Gateway'
+  if (err) {
+    // console.log('error occurred, error 22 ', "error ");
+  }
   if (typeof body !== "object") {
     // console.log('body is undefined!');
     return true;
   }
   if (body) {
     // console.log('body ', body.status);
-  }
-  if (err) {
-    console.log('error occurred ', err);
   }
   try {
     // throw new Error('Whoops!');
@@ -63,14 +72,16 @@ function vehicleInfoRetryStrategy(err, response, body){
   } catch(e) {
   // } catch(err) {
     if ( e instanceof TypeError ) {
-      console.log('TypeError error', e.code);
+      // console.log('stack', e.stack);
+      // console.log('TypeError error', 'error', e.name, 'message', e.message, ' error 12');
+      // handled by error 11 in getVehicleInfoService
     } else {
-      console.log('parse error', e);
+      console.log('parse error', e, ' error 14');
     }
     return true;
   }
   // console.log('body=', body);
-  return err || response.statusCode === 502 || response.statusCode > 299;
+  return err || response.statusCode > 299;
 }
 
 let getVehicleInfoService = (req, res) => {
@@ -82,9 +93,9 @@ let getVehicleInfoService = (req, res) => {
     method: 'POST',                             // must be present
     body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
-
+    timeout: 10000,
     // The below parameters are specific to request-retry
-    maxAttempts: 4,   // (default) try 5 times
+    maxAttempts: 5,   // (default) try 5 times
     // retryDelay: 300,  // (default) wait for 5s before trying again
     delayStrategy: expDelayStrategy,
     retryStrategy: vehicleInfoRetryStrategy, // (default) retry on 5xx or network errors
@@ -100,24 +111,26 @@ let getVehicleInfoService = (req, res) => {
         "doorCount": response.body.data.fourDoorSedan.value ? 4 : 2,
         "driveTrain": response.body.data.driveTrain.value
       }
-    } catch(e) {
-      // console.log(' error happened', e);
-      if (e) {
-        data = {"status1": "404", "errno": e.errno, "message": e.message, "code": "1"};
-      } else {
-        data = {"status1": "404", "message": e.message, "code": "1"};
-      }
+    } catch(err) {
+      // console.log(err.stack);
+      // data = {"status": "404", "error name": e.name, "message": e.message, "error stack": e.stack};
+      data = {"status": "404", "error": err.name, "message": err.message, "code": "11"};
+      // if (e) {
+      //   data = {"status": "404", "error name": e.name, "message": e.message, "error stack": e.stack};
+      // } else {
+      //   data = {"status": "404", "message": e.message, "code": "1",};
+      // }
     }
     // res.status = 200;
     res.send(data);
 
   })
   .catch(function(error) {
-    // error = Any occurred error
+    // console.log( 'error = Any occurred error', error);
     // res.status = 404;
-    // console.log('in promises error=', error.message, 'status=', res.statusCode);
+    // console.log("errno", error.errno, "message", error.message, 'error name', error.name);
     try {
-      res.send({"status": "404", "message": error.message, "code": "2"});
+      res.send({"status": "404", "errno": error.errno, "message": error.message, "code": "2"});
     } catch(e) {
       console.error('no errno value')
     }
@@ -173,8 +186,9 @@ let getSecurityStatusService = (req, res) => {
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
     // The below parameters are specific to request-retry
-    maxAttempts: 3,   // (default) try 5 times
-    retryDelay: 300,  // (default) wait for 5s before trying again
+    maxAttempts: 5,   // (default) try 5 times
+    // retryDelay: 300,  // (default) wait for 5s before trying again
+    delayStrategy: expDelayStrategy,
     retryStrategy: securityStatusRetryStrategy, // (default) retry on 5xx or network errors
     // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
     fullResponse: true // (default) To resolve the promise with the full response or just the body
@@ -198,7 +212,12 @@ let getSecurityStatusService = (req, res) => {
   .catch(function(error) {
     // error = Any occurred error
     // console.log('in promises error=', error.code, error.message); // error.code = ENOTFOUND
-    res.send({"status": "404", "errno": error.code, "message": error.message, "code": "3"});
+    // res.send({"status": "404", "error name": e.name, "message": error.message, "code": "3"});
+    try {
+      res.send({"status": "404", "errno": error.errno, "message": error.message, "code": "2"});
+    } catch(e) {
+      console.error('no errno value')
+    }
   })
 }
 
@@ -248,8 +267,9 @@ let getEnergyService = (req, res) => {
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
     // The below parameters are specific to request-retry
-    maxAttempts: 3,   // (default) try 5 times
-    retryDelay: 300,  // (default) wait for 5s before trying again
+    maxAttempts: 5,   // (default) try 5 times
+    // retryDelay: 300,  // (default) wait for 5s before trying again
+    delayStrategy: expDelayStrategy,
     retryStrategy: getEnergyRetryStrategy, // (default) retry on 5xx or network errors
     // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
     fullResponse: true // (default) To resolve the promise with the full response or just the body
@@ -318,8 +338,9 @@ let getBatteryEnergyService = (req, res) => {
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
     // The below parameters are specific to request-retry
-    maxAttempts: 3,   // (default) try 5 times
-    retryDelay: 300,  // (default) wait for 5s before trying again
+    maxAttempts: 5,   // (default) try 5 times
+    // retryDelay: 300,  // (default) wait for 5s before trying again
+    delayStrategy: expDelayStrategy,
     retryStrategy: getBatteryRetryStrategy, // (default) retry on 5xx or network errors
     // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
     fullResponse: true // (default) To resolve the promise with the full response or just the body

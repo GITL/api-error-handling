@@ -1,7 +1,5 @@
 const router = require('express').Router();
-// const requestHandler = require('./requestHandler.js');
-// const handler = require('./axios.js');
-const retry = require('./retry.js');
+const retry = require('./requestHandler.js');
 
 router.get('/:id', retry.getVehicleInfoService);
 

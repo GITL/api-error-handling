@@ -1,3 +1,12 @@
+check internet
+check params
+check json data is correct
+handle time outs
+handle econnrefused
+log into text file
+config file
+
+
 failed to connect to server
 failed to resolve hostname
 invalid user input
