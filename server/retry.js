@@ -68,17 +68,29 @@ let getVehicleInfoService = (req, res) => {
     fullResponse: true // (default) To resolve the promise with the full response or just the body
   })
   .then(function (response) {
-    // response = The full response object or just the body
-    // console.log('in promises reponse.body', response.body);
-    console.log('in promises reponse.body.status', response.body.status); // correct
-    // console.log('in promises reponse', response.statusCode); // may not be correct
-    res.statusCode = 200;
-    res.send(response.body);
+    var data = {};
+    try {
+      // response = The full response object or just the body
+      // console.log('in promises reponse.body', response.body);
+      // console.log('in promises reponse.body.status', response.body.data); // correct
+      // console.log(response.body);
+      // console.log('in promises reponse', response.statusCode); // may not be correct
+      data = {
+        "vin": response.body.data.vin.value,
+        "color": response.body.data.color.value,
+        "doorCount": response.body.data.fourDoorSedan.value ? 4 : 2,
+        "driveTrain": response.body.data.driveTrain.value
+      }
+    } catch(e) {
+      console.log(' error happened', e);
+    }
+    res.status = 200;
+    res.send(data);
 
   })
   .catch(function(error) {
     // error = Any occurred error
-    console.log('in promises error', error.code);
+    console.log('in promises error=', error.code);
   })
 }
 
