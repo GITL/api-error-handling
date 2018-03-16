@@ -1,23 +1,48 @@
 const request = require('requestretry');
-// const url = require('url');
 
+const delay = 200; // start retrying after 200 ms of first try
+const TWO = 2;
 
-function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    var results = regex.exec(window.location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-};
+/**
+ * @param  {Null | Object} err
+ * @param  {Object} response
+ * @param  {Object} body
+ * @return {Number} number of milliseconds to wait before trying again the request
+ */
+function expDelayStrategy(err, response, body){
+  // set delay of retry to a random number between 300 and 2000 ms
+  var multiple = 1;// = Math.floor(Math.random() * (2000 - 300 + 1) + 300);
+  var message = '';
+  var backoff = 1;
 
-function myRetryStrategy(err, response, body){
+  try {
+    if (err.attempts) {
+      multiple = err.attempts;
+    }
+    backoff = delay * Math.pow(TWO, multiple - 1);
+    message = 'exponential backing off ' + backoff + ' ms';
+  } catch(e) {
+    // console.error('undefined error')
+    multiple = Math.floor(Math.random() * 4 + 1);
+    backoff = delay * Math.pow(TWO, multiple - 1);
+    // console.log('backoff', backoff);
+    message = 'random backoff ' +  backoff +  ' ms';
+  }
 
+  // const backoff = delay * Math.pow(TWO, multiple - 1);
+  // console.log(multiple, 'backing off ', backoff, ' ms');
+  console.log(message);
+  return backoff;
+}
+
+function vehicleInfoRetryStrategy(err, response, body){
   // retry the request if we had an error or if the response was a 'Bad Gateway'
   if (typeof body !== "object") {
-    console.log('body is undefined!');
+    // console.log('body is undefined!');
     return true;
   }
   if (body) {
-    console.log('body ', body.status);
+    // console.log('body ', body.status);
   }
   if (err) {
     console.log('error occurred ', err);
@@ -38,7 +63,7 @@ function myRetryStrategy(err, response, body){
   } catch(e) {
   // } catch(err) {
     if ( e instanceof TypeError ) {
-      console.log('TypeError error', e);
+      console.log('TypeError error', e.code);
     } else {
       console.log('parse error', e);
     }
@@ -52,15 +77,17 @@ let getVehicleInfoService = (req, res) => {
   // console.log('here');
   request({
     url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
+    // url: '127.0.0.1:3001/vehicles/test',
     json: true,                                 // must be present
     method: 'POST',                             // must be present
     body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
     // The below parameters are specific to request-retry
-    maxAttempts: 3,   // (default) try 5 times
-    retryDelay: 300,  // (default) wait for 5s before trying again
-    retryStrategy: myRetryStrategy, // (default) retry on 5xx or network errors
+    maxAttempts: 4,   // (default) try 5 times
+    // retryDelay: 300,  // (default) wait for 5s before trying again
+    delayStrategy: expDelayStrategy,
+    retryStrategy: vehicleInfoRetryStrategy, // (default) retry on 5xx or network errors
     // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
     fullResponse: true // (default) To resolve the promise with the full response or just the body
   })
@@ -74,15 +101,26 @@ let getVehicleInfoService = (req, res) => {
         "driveTrain": response.body.data.driveTrain.value
       }
     } catch(e) {
-      console.log(' error happened', e);
+      // console.log(' error happened', e);
+      if (e) {
+        data = {"status1": "404", "errno": e.errno, "message": e.message, "code": "1"};
+      } else {
+        data = {"status1": "404", "message": e.message, "code": "1"};
+      }
     }
-    res.status = 200;
+    // res.status = 200;
     res.send(data);
 
   })
   .catch(function(error) {
     // error = Any occurred error
-    console.log('in promises error=', error.code);
+    // res.status = 404;
+    // console.log('in promises error=', error.message, 'status=', res.statusCode);
+    try {
+      res.send({"status": "404", "message": error.message, "code": "2"});
+    } catch(e) {
+      console.error('no errno value')
+    }
   })
 }
 
@@ -90,11 +128,11 @@ let getVehicleInfoService = (req, res) => {
 function securityStatusRetryStrategy(err, response, body){
   // retry the request if we had an error or if the response was a 'Bad Gateway'
   if (typeof body !== "object") {
-    console.log('body is undefined!');
+    // console.log('body is undefined!');
     return true;
   }
   if (body) {
-    console.log('body ', body.status);
+    // console.log('body ', body.status);
   }
   if (err) {
     console.log('error occurred ', err);
@@ -159,7 +197,8 @@ let getSecurityStatusService = (req, res) => {
   })
   .catch(function(error) {
     // error = Any occurred error
-    console.log('in promises error=', error.code);
+    // console.log('in promises error=', error.code, error.message); // error.code = ENOTFOUND
+    res.send({"status": "404", "errno": error.code, "message": error.message, "code": "3"});
   })
 }
 

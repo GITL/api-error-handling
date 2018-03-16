@@ -3,7 +3,7 @@ const express = require('express');
 // const timeout = require('connect-timeout');
 const app = express();
 
-const GM = require('./requestModule.js');
+// const GM = require('./requestModule.js');
 
 // const fibo = require('./axios.js');
 
