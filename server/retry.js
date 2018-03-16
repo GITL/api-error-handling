@@ -1,11 +1,15 @@
 const request = require('requestretry');
-// var GO = false;
+// const url = require('url');
+
+
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(window.location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
 
 function myRetryStrategy(err, response, body){
-  // console.log('in promises body=', body);
-  // console.log('in promises reponse.body=', response.body);
-  // console.log('in promises reponse.body.status=', response.body.status);
-  // console.log('in promises reponse.status=', response.status);
 
   // retry the request if we had an error or if the response was a 'Bad Gateway'
   if (typeof body !== "object") {
@@ -53,13 +57,6 @@ let getVehicleInfoService = (req, res) => {
     body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
     headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
 
-    // url: 'http://127.0.0.1:3001/vehicles/test',
-    // // url: 'http://8.8.8.8:8080/',
-    // json: true,
-    // method: "POST",
-    // body: {"id": "1235", "responseType": "JSON"},
-    // headers: { "Content-Type": "application/json" },
-
     // The below parameters are specific to request-retry
     maxAttempts: 3,   // (default) try 5 times
     retryDelay: 300,  // (default) wait for 5s before trying again
@@ -70,11 +67,6 @@ let getVehicleInfoService = (req, res) => {
   .then(function (response) {
     var data = {};
     try {
-      // response = The full response object or just the body
-      // console.log('in promises reponse.body', response.body);
-      // console.log('in promises reponse.body.status', response.body.data); // correct
-      // console.log(response.body);
-      // console.log('in promises reponse', response.statusCode); // may not be correct
       data = {
         "vin": response.body.data.vin.value,
         "color": response.body.data.color.value,
@@ -95,41 +87,298 @@ let getVehicleInfoService = (req, res) => {
 }
 
 
-// no server or server refused connection(wrong port)
-// { Error: connect ECONNREFUSED 127.0.0.1:3001
-//     at Object._errnoException (util.js:1031:13)
-//     at _exceptionWithHostPort (util.js:1052:20)
-//     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1195:14)
-//   errno: 'ECONNREFUSED',
-//   code: 'ECONNREFUSED',
-//   syscall: 'connect',
-//   address: '127.0.0.1',
-//   port: 3001,
-//   attempts: 3 }
+function securityStatusRetryStrategy(err, response, body){
+  // retry the request if we had an error or if the response was a 'Bad Gateway'
+  if (typeof body !== "object") {
+    console.log('body is undefined!');
+    return true;
+  }
+  if (body) {
+    console.log('body ', body.status);
+  }
+  if (err) {
+    console.log('error occurred ', err);
+  }
+  try {
+    // throw new Error('Whoops!');
+    if (typeof body === "object") {
+      // console.log('here', typeof body);
+      var data = [{
+        "location": body.data.doors.values[0].location.value,
+        "locked": body.data.doors.values[0].locked.value},
+        {"location": body.data.doors.values[1].location.value,
+        "locked": body.data.doors.values[1].locked.value
+      }]
+    }
 
-// check timeout
-// err  { Error: connect ETIMEDOUT 8.8.8.8:8080
-//     at Object._errnoException (util.js:1031:13)
-//     at _exceptionWithHostPort (util.js:1052:20)
-//     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1195:14)
-//   errno: 'ETIMEDOUT',
-//   code: 'ETIMEDOUT',
-//   syscall: 'connect',
-//   address: '8.8.8.8',
-//   port: 8080,
-//   attempts: 1 }
+    // do data check
+  } catch(e) {
+  // } catch(err) {
+    if ( e instanceof TypeError ) {
+      console.log('TypeError error', e);
+    } else {
+      console.log('parse error', e);
+    }
+    return true;
+  }
+  // console.log('body=', body);
+  return err || response.statusCode === 502 || response.statusCode > 299;
+}
 
-// server not found
-// { Error: getaddrinfo ENOTFOUND gmapi.azurewebsites.ne gmapi.azurewebsites.ne:80
-//     at errnoException (dns.js:55:10)
-//     at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:97:26)
-//   code: 'ENOTFOUND',
-//   errno: 'ENOTFOUND',
-//   syscall: 'getaddrinfo',
-//   hostname: 'gmapi.azurewebsites.ne',
-//   host: 'gmapi.azurewebsites.ne',
-//   port: 80,
-//   attempts: 3 }
+let getSecurityStatusService = (req, res) => {
+  // console.log('here');
+  request({
+    url: 'http://gmapi.azurewebsites.net/getSecurityStatusService',
+    json: true,                                 // must be present
+    method: 'POST',                             // must be present
+    body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
+    headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
+
+    // The below parameters are specific to request-retry
+    maxAttempts: 3,   // (default) try 5 times
+    retryDelay: 300,  // (default) wait for 5s before trying again
+    retryStrategy: securityStatusRetryStrategy, // (default) retry on 5xx or network errors
+    // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
+    fullResponse: true // (default) To resolve the promise with the full response or just the body
+  })
+  .then(function (response) {
+    var data = {};
+    try {
+      data = [{
+        "location": response.body.data.doors.values[0].location.value,
+        "locked": response.body.data.doors.values[0].locked.value},
+        {"location": response.body.data.doors.values[1].location.value,
+        "locked": response.body.data.doors.values[1].locked.value
+      }]
+    } catch(e) {
+      console.log(' error happened', e);
+    }
+    res.status = 200;
+    res.send(data);
+
+  })
+  .catch(function(error) {
+    // error = Any occurred error
+    console.log('in promises error=', error.code);
+  })
+}
+
+
+function getEnergyRetryStrategy(err, response, body){
+  // retry the request if we had an error or if the response was a 'Bad Gateway'
+  if (typeof body !== "object") {
+    console.log('body is undefined!');
+    return true;
+  }
+  if (body) {
+    console.log('body ', body.status);
+  }
+  if (err) {
+    console.log('error occurred ', err);
+  }
+  try {
+    // throw new Error('Whoops!');
+    if (typeof body === "object") {
+      console.log('body.data', body.data);
+      var data = {
+        "percent": body.data.tankLevel.value
+      }
+    }
+
+    // do data check
+  } catch(e) {
+  // } catch(err) {
+    if ( e instanceof TypeError ) {
+      console.log('TypeError error', e);
+    } else {
+      console.log('parse error', e);
+    }
+    return true;
+  }
+  // console.log('body=', body);
+  return err || response.statusCode === 502 || response.statusCode > 299;
+}
+
+let getEnergyService = (req, res) => {
+  // console.log('here');
+  request({
+    url: 'http://gmapi.azurewebsites.net/getEnergyService',
+    json: true,                                 // must be present
+    method: 'POST',                             // must be present
+    body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
+    headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
+
+    // The below parameters are specific to request-retry
+    maxAttempts: 3,   // (default) try 5 times
+    retryDelay: 300,  // (default) wait for 5s before trying again
+    retryStrategy: getEnergyRetryStrategy, // (default) retry on 5xx or network errors
+    // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
+    fullResponse: true // (default) To resolve the promise with the full response or just the body
+  })
+  .then(function (response) {
+    var data = {};
+    try {
+      data = {
+        "percent": response.body.data.tankLevel.value
+      }
+    } catch(e) {
+      console.log(' error happened', e);
+    }
+    res.status = 200;
+    res.send(data);
+
+  })
+  .catch(function(error) {
+    // error = Any occurred error
+    console.log('in promises error=', error.code);
+  })
+}
+
+function getBatteryRetryStrategy(err, response, body){
+  // retry the request if we had an error or if the response was a 'Bad Gateway'
+  if (typeof body !== "object") {
+    console.log('body is undefined!');
+    return true;
+  }
+  if (body) {
+    console.log('body ', body.status);
+  }
+  if (err) {
+    console.log('error occurred ', err);
+  }
+  try {
+    // throw new Error('Whoops!');
+    if (typeof body === "object") {
+      console.log('body.data', body.data);
+      var data = {
+        "percent": body.data.batteryLevel.value
+      }
+    }
+
+    // do data check
+  } catch(e) {
+  // } catch(err) {
+    if ( e instanceof TypeError ) {
+      console.log('TypeError error', e);
+    } else {
+      console.log('parse error', e);
+    }
+    return true;
+  }
+  // console.log('body=', body);
+  return err || response.statusCode === 502 || response.statusCode > 299;
+}
+
+let getBatteryEnergyService = (req, res) => {
+  // console.log('here');
+  request({
+    url: 'http://gmapi.azurewebsites.net/getEnergyService',
+    json: true,                                 // must be present
+    method: 'POST',                             // must be present
+    body: {"id": req.params.id, "responseType": "JSON"},     // must be JSON with quotes
+    headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
+
+    // The below parameters are specific to request-retry
+    maxAttempts: 3,   // (default) try 5 times
+    retryDelay: 300,  // (default) wait for 5s before trying again
+    retryStrategy: getBatteryRetryStrategy, // (default) retry on 5xx or network errors
+    // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
+    fullResponse: true // (default) To resolve the promise with the full response or just the body
+  })
+  .then(function (response) {
+    var data = {};
+    try {
+      data = {
+        "percent": response.body.data.batteryLevel.value
+      }
+    } catch(e) {
+      console.log(' error happened', e);
+    }
+    res.status = 200;
+    res.send(data);
+
+  })
+  .catch(function(error) {
+    // error = Any occurred error
+    console.log('in promises error=', error.code);
+  })
+}
+
+
+function engineServiceRetryStrategy(err, response, body){
+  // retry the request if we had an error or if the response was a 'Bad Gateway'
+  if (typeof body !== "object") {
+    console.log('body is undefined!');
+    return true;
+  }
+  if (body) {
+    console.log('body ', body.status);
+  }
+  if (err) {
+    console.log('error occurred ', err);
+  }
+  try {
+    // throw new Error('Whoops!');
+    if (typeof body === "object") {
+      console.log('body', body);
+      var data = {
+        "status": (body.actionResult.status === 'EXECUTED') ? 'success' : 'error'
+      }
+    }
+
+    // do data check
+  } catch(e) {
+  // } catch(err) {
+    if ( e instanceof TypeError ) {
+      console.log('TypeError error', e);
+    } else {
+      console.log('parse error', e);
+    }
+    return true;
+  }
+  // console.log('body=', body);
+  return err || response.statusCode === 502 || response.statusCode > 299;
+}
+
+let actionEngineService = (req, res) => {
+  // var url_parts = url.parse(req.url, true);
+  // var query = url_parts.query;
+
+  let command = req.query["action"];
+  console.log('command', command);
+
+  request({
+    url: 'http://gmapi.azurewebsites.net/actionEngineService',
+    json: true,                                 // must be present
+    method: 'POST',                             // must be present
+    body: {"id": req.params.id, "command": "START_VEHICLE", "responseType": "JSON"},     // must be JSON with quotes
+    headers: { "Content-Type": "application/json" }, // Must be JSON with quotes
+
+    // The below parameters are specific to request-retry
+    maxAttempts: 3,   // (default) try 5 times
+    retryDelay: 300,  // (default) wait for 5s before trying again
+    retryStrategy: engineServiceRetryStrategy, // (default) retry on 5xx or network errors
+    // retryStrategy: request.RetryStrategies.HTTPOrNetworkError, // (default) retry on 5xx or network errors
+    fullResponse: true // (default) To resolve the promise with the full response or just the body
+  })
+  .then(function (response) {
+    var data = {};
+    try {
+      data = {
+        "status": (response.body.actionResult.status === 'EXECUTED') ? 'success' : 'error'
+      }
+    } catch(e) {
+      console.log(' error happened', e);
+    }
+    res.status = 200;
+    res.send(data);
+
+  })
+  .catch(function(error) {
+    // error = Any occurred error
+    console.log('in promises error=', error.code);
+  })
+}
 
 
  // function yourExportedFunction() {
@@ -138,44 +387,6 @@ let getVehicleInfoService = (req, res) => {
  //     return p;
  // }
 
-// request({
-//   // GM API *****************************************
-//   url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
-//   json: true,
-//   method: 'POST',
-//   body: {"id": "1236", "responseType": "JSON"},
-//   headers: { "Content-Type": "application/json" },
-
-//   // // INTERNET CONNECTION TEST **********************
-//   // url: 'http://8.8.8.8',
-//   // // json: true,
-//   // method: 'GET',
-
-//   // // TEST SERVER*************************************
-//   // url: 'http://127.0.0.1:3002/vehicles/test',
-//   // json: true,
-//   // method: 'POST',
-//   // body: {"id": "1235", "responseType": "JSON"},
-//   // headers: { "Content-Type": "application/json" },
-
-//   // The below parameters are specific to request-retry
-//   maxAttempts: 3,   // (default) try 5 times
-//   retryDelay: 5000,  // (default) wait for 5s before trying again
-//   // retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
-//   retryStrategy: myRetryStrategy, // (default) retry on 5xx or network errors
-//   // delayStrategy: constructExponentialBackoffStrategy()
-// }, function(err, response, body){
-//   // this callback will only be called when the request succeeded or after maxAttempts or on error
-//   if (response) {
-//     console.log('The number of request attempts: ' + response.attempts);
-//   }
-//   if (body) {
-//     console.log('body is', body);
-//   }
-//   if (err) {
-//     console.log('error is ', err);
-//   }
-// });
 
 /**
  * @param   {Number} attempts The number of times that the request has been attempted.
@@ -270,3 +481,7 @@ function isValidResponse(body) {
 // var request = require('requestretry').defaults({ json: true, retryStrategy: myRetryStrategy });
 
 module.exports.getVehicleInfoService = getVehicleInfoService;
+module.exports.getSecurityStatusService = getSecurityStatusService;
+module.exports.getEnergyService = getEnergyService;
+module.exports.getBatteryEnergyService = getBatteryEnergyService
+module.exports.actionEngineService = actionEngineService
