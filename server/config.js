@@ -6,8 +6,6 @@ config.port = 3000; // Listening port for Express
 config.vehiclesEndPoint = '/vehicles';
 config.expressTimeOut = 30000; // 30 seconds
 
-
-
 config.jitterRange = 0.3;
 config.jitterHalfRange = config.jitterRange / 2;
 config.maxAttemptNumberForRandomBackoff = 4;
