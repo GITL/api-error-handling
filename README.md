@@ -105,7 +105,11 @@ curl http://gmapi.azurewebsites.net/getVehicleInfoService -X POST -H 'Content-Ty
 
 curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "START"}' -H 'Content-Type: application/json'
 
-curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "STOP"}' -H 'Content-Type: application/json'
+curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "STOP", "responseType": "JSON"}' -H 'Content-Type: application/json'
+
+
+curl http://gmapi.azurewebsites.net/actionEngineService -X POST -H 'Content-Type: application/json'  -d '{"id": "1234", "responseType": "JSON", "command": "STOP_VEHICLE"}'
+
 
 541 characters for Security response
 
@@ -233,4 +237,33 @@ Response:
  "actionResult":{"status":"FAILED"}}
 
 {"status": res[actionResult][status] === "EXECUTED" ? "success" : "error"}
+
+
+POST /actionEngineService
+Content-Type: application/json
+
+{
+  "id": "1234",
+  "command": "START_VEHICLE|STOP_VEHICLE",
+  "responseType": "JSON"
+}
+Response:
+
+{
+  "service": "actionEngine",
+  "status": "200",
+  "actionResult": {
+    "status": "EXECUTED|FAILED"
+  }
+}
+
+POST /vehicles/:id/engine
+Content-Type: application/json
+
+{
+  "action": "START|STOP"
+}
+
+
+
 

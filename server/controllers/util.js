@@ -1,4 +1,3 @@
-
 exports.hasNetConnection = function () {
   return new Promise((resolve, reject) => {
     console.log('checking net connection');
@@ -24,5 +23,12 @@ exports.hasNetConnection = function () {
   });
 }
 
+// warning only if no net connection found
+exports.checkNetConnection = function() {
+  this.hasNetConnection().then(() => {
 
+  } ).catch(() => {
+
+  } )
+}
 

@@ -1,43 +1,37 @@
 // set up express server
 const express = require('express');
+const bodyParser = require('body-parser')
+
 // const timeout = require('connect-timeout');
 const app = express();
 
-const util = require('./controllers/util.js');
+const utils = require('./util.js');
 
-// const GM = require('./requestModule.js');
-
-// const fibo = require('./axios.js');
+const config = require('./config');
 
 // use middleware to parse incoming data from post
-const bodyparser = require('body-parser');
-app.use(bodyparser.json());
+app.use(bodyParser.json());
 
 // check for net connection, give a warning if no net connection
-util.hasNetConnection().then(() => {
-
-} ).catch(() => {
-
-} )
+if ( config.checkNetConnectionUponStart ) { utils.checkNetConnection() };
 
 // use router for endpoints
 const router = require('./routes.js');
 
+// set timeout for express
 app.use(function(req, res, next){
-  res.setTimeout(30000, function(){
+  res.setTimeout(config.expressTimeOut, function(){
     console.log('Request has timed out.');
       res.sendStatus(408);
     });
-
   next();
 });
 
-app.use('/vehicles', router);
+app.use(config.vehiclesEndPoint, router);
 
 app.use(express.static(__dirname + '../client/dist'));
 
-
-app.set('port', 3000);
+app.set('port', config.port);
 app.listen(app.get('port'));
 
 console.log('Listening on port ', app.get('port'));

@@ -1,14 +1,14 @@
 const router = require('express').Router();
-const retry = require('./requestHandler.js');
+const handler = require('./requestHandler.js');
 
-router.get('/:id', retry.getVehicleInfoService);
+router.get('/:id', handler.vehicleInfoService);
 
-router.get('/:id/doors', retry.getSecurityStatusService);
+router.get('/:id/doors', handler.securityStatusService);
 
-router.get('/:id/fuel', retry.getEnergyService);
+router.get('/:id/fuel', handler.energyService);
 
-router.get('/:id/battery', retry.getBatteryEnergyService);
+router.get('/:id/battery', handler.batteryEnergyService);
 
-router.post('/:id/engine', retry.actionEngineService);
+router.post('/:id/engine', handler.actionEngineService);
 
 module.exports = router;
