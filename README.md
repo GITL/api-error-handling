@@ -1,6 +1,6 @@
 A. How to run this server app:
 
-1. from the root/smartcar folder, install npm modules
+1. from the root folder, install npm modules
    `npm -S install`
 
 2. start the app with `node server/index.js`
@@ -15,7 +15,7 @@ Main Express entry page -> router page -> request handler page (requestretry)
 
 C. Exponential backoff with jitter:
 
-Attempted to handle as many "errors" as possible  See error-types.pdf. Have also included a random backoff as a backup, should exponential backoff algorithm fail
+Handle invalid json response with exponential backoff.  Also included a random backoff.
 
 - - - - -
 
@@ -53,10 +53,10 @@ More use of Promises and Async/Await
 
 G. curl commands, Postman and a separate server standing for GM were used to develop and test functionalities
 
-curl http://gmapi.azurewebsites.net/getVehicleInfoService -X POST -H 'Content-Type: application/json'  -d '{"id": "1234", "responseType": "JSON"}'
+curl http://originServer/id -X POST -H 'Content-Type: application/json'  -d '{"id": "7654", "responseType": "JSON"}'
 
-curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "START"}' -H 'Content-Type: application/json'
+curl http://originServer/id/endpoint2 -X POST -d '{"action": "START"}' -H 'Content-Type: application/json'
 
-curl http://127.0.0.1:3000/vehicles/1235/engine -X POST -d '{"action": "STOP", "responseType": "JSON"}' -H 'Content-Type: application/json'
+curl http://originServer/id/endpoint2 -X POST -d '{"action": "STOP", "responseType": "JSON"}' -H 'Content-Type: application/json'
 
-curl http://gmapi.azurewebsites.net/actionEngineService -X POST -H 'Content-Type: application/json'  -d '{"id": "1234", "responseType": "JSON", "command": "STOP_VEHICLE"}'
+curl http://originServer/id/endpoint3 -X POST -H 'Content-Type: application/json'  -d '{"id": "7654", "responseType": "JSON", "command": "ACTION"}'

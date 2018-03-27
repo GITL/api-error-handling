@@ -58,13 +58,13 @@ function exponentialBackOff(err, response, body){
 }
 
 
-function retryStrategy_vehicleInfo(err, response, body){
+function retryInfo(err, response, body){
   // retry the request if we had an error or if the response was a 'Bad Gateway'
   if (err) {
     // console.log('error occurred, error 22 ', "error ");
   }
 
-  // retry if GM's response is not valid JSON
+  // retry if origin server response is not valid JSON
   if (typeof body !== "object") {
     // console.log('body is undefined!');
     return true;
@@ -73,7 +73,7 @@ function retryStrategy_vehicleInfo(err, response, body){
   try {
     if (typeof body === "object") {
 
-      // test for parsing vehicle info from GM's response
+      // test for parsing vehicle info from orign server response
       var data = {
         "vin": body.data.vin.value,
         "color": body.data.color.value,
@@ -87,7 +87,7 @@ function retryStrategy_vehicleInfo(err, response, body){
 
   } catch(err) {
     if ( err instanceof TypeError ) {
-      // error will be handled in getVehicleInfoService()
+      // error will be handled in infoService()
       // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 12');
     } else {
       console.error(err.name, 'JSON parse error', ' error 14');
@@ -98,12 +98,12 @@ function retryStrategy_vehicleInfo(err, response, body){
   return err || response.statusCode > config.minRetryStatusCodeValue;
 }
 
-let vehicleInfoService = (req, res) => {
+let infoService = (req, res) => {
   // TODO *******************************************************
   // refactor option selection out of this function
   // ************************************************************
   request({
-    url: 'http://gmapi.azurewebsites.net/getVehicleInfoService',
+    url: 'http://orignServer/id',
     // url: '127.0.0.1:3001/vehicles/test',
     json: true,
     method: 'POST',
@@ -113,14 +113,14 @@ let vehicleInfoService = (req, res) => {
     // The below parameters are specific to request-retry
     maxAttempts: config.maxRetryForBackoff,
     delayStrategy: exponentialBackOff,
-    retryStrategy: retryStrategy_vehicleInfo,
+    retryStrategy: retryInfo,
     fullResponse: true
   })
   .then(function (response) {
     attempts = 0;
     var data = {};
     try {
-      // test for parsing vehicle info from GM's response
+      // test for parsing vehicle info from orign server's response
       data = {
         "vin": response.body.data.vin.value,
         "color": response.body.data.color.value,
@@ -158,419 +158,361 @@ let vehicleInfoService = (req, res) => {
 }
 
 
-function retryStrategy_security(err, response, body){
-  if (typeof body !== "object") {
-    return true;
-  }
-  if (err) {
-    // console.error('error occurred ', err.message);
-  }
-  try {
-    if (typeof body === "object") {
-      var data = [{
-        "location": body.data.doors.values[0].location.value,
-        "locked": body.data.doors.values[0].locked.value},
-        {"location": body.data.doors.values[1].location.value,
-        "locked": body.data.doors.values[1].locked.value
-      }]
-    }
-      // TODO *******************************************************
-      // refactor this resonse obj construction out of here
-      // ************************************************************
-
-  } catch(e) {
-    if ( e instanceof TypeError ) {
-      // error will be handled in getVehicleInfoService()
-      // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 09');
-    } else {
-      console.error(err.name, 'JSON parse error', ' error 14');
-    }
-    return true;
-  }
-
-  return err || response.statusCode > config.minRetryStatusCodeValue;
-}
-
-let securityStatusService = (req, res) => {
-  // TODO *******************************************************
-  // refactor option selection out of this function
-  // ************************************************************
-  request({
-    url: 'http://gmapi.azurewebsites.net/getSecurityStatusService',
-    json: true,
-    method: 'POST',
-    body: {"id": req.params.id, "responseType": "JSON"},
-    headers: { "Content-Type": "application/json" },
-
-    // The below parameters are specific to request-retry
-    maxAttempts: config.maxRetryForBackoff,
-    delayStrategy: exponentialBackOff,
-    retryStrategy: retryStrategy_security,
-    fullResponse: true // (default) To resolve the promise with the full response or just the body
-  })
-  .then(function (response) {
-    attempts = 0;
-    var data = {};
-    try {
-      // test for parsing vehicle info from GM's response
-      data = [{
-        "location": response.body.data.doors.values[0].location.value,
-        "locked": response.body.data.doors.values[0].locked.value},
-        {"location": response.body.data.doors.values[1].location.value,
-        "locked": response.body.data.doors.values[1].locked.value
-      }]
-      // TODO *******************************************************
-      // even if valid JSON, need to check presence of all required properties
-      // ************************************************************
-
-    } catch(err) {
-      // can save err.stack to log file
-      // Smartcar response to clients
-      data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 11"};
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // "code" can be used for internal use
-      // ************************************************************
-    }
-    res.send(JSON.stringify( data ));
-  })
-  .catch(function(error) {
-    attempts = 0;
-    try {
-      res.send({"status": "404", "errno": error.errno, "message": error.message, "code": "2"});
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // ************************************************************
-    } catch(e) {
-      console.error('no errno value')
-    }
-  })
-}
-
-
-function retryStrategy_energy(err, response, body){
-  // retry the request if we had an error or if the response was a 'Bad Gateway'
-  if (typeof body !== "object") {
-    // console.log('body is undefined!');
-    return true;
-  }
-  if (err) {
-    console.log('error occurred ', err);
-  }
-  try {
-    if (typeof body === "object") {
-      var data = {
-        "percent": body.data.tankLevel.value
-      }
-    }
-      // TODO *******************************************************
-      // refactor this resonse obj construction out of here
-      // ************************************************************
-
-  } catch(e) {
-  // } catch(err) {
-    if ( err instanceof TypeError ) {
-      // error will be handled in getVehicleInfoService()
-      // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 12');
-    } else {
-      console.error(err.name, 'JSON parse error', ' error 05');
-    }
-    return true;
-  }
-  return err || response.statusCode > config.minRetryStatusCodeValue;
-}
-
-
-let energyService = (req, res) => {
-  // TODO *******************************************************
-  // refactor option selection out of this function
-  // ************************************************************
-  request({
-    url: 'http://gmapi.azurewebsites.net/getEnergyService',
-    json: true,
-    method: 'POST',
-    body: {"id": req.params.id, "responseType": "JSON"},
-    headers: { "Content-Type": "application/json" },
-    // The below parameters are specific to request-retry
-    maxAttempts: config.maxRetryForBackoff,
-    delayStrategy: exponentialBackOff,
-    retryStrategy: retryStrategy_energy,
-    fullResponse: true
-  })
-  .then(function (response) {
-    attempts = 0;
-    var data = {};
-    try {
-      // TODO *******************************************************
-      // even if valid JSON, need to check presence of all required properties
-      // ************************************************************
-      data = {
-        "percent": Math.round(response.body.data.tankLevel.value)
-      }
-      // TODO *******************************************************
-      // could also save battery data
-      // ************************************************************
-    } catch(e) {
-      // can save err.stack to log file
-
-      // Smartcar response to clients
-      data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 20"};
-
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // "code" can be used for internal use
-      // ************************************************************
-    }
-    res.send(JSON.stringify( data ));
-
-  })
-  .catch(function(err) {
-    attempts = 0;
-    try {
-      res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "21"});
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // ************************************************************
-    } catch(err) {
-      console.error('no errno value')
-    }
-  })
-}
-
-
-function retryStrategy_battery(err, response, body){
-  if (typeof body !== "object") {
-    // console.log('body is undefined!');
-    return true;
-  }
-  if (err) {
-    console.log('error occurred ', err);
-  }
-  try {
-    if (typeof body === "object") {
-      var data = {
-        "percent": body.data.batteryLevel.value
-      }
-      // TODO *******************************************************
-      // refactor this resonse obj construction out of here
-      // ************************************************************
-    }
-  } catch(err) {
-    if ( err instanceof TypeError ) {
-      // error will be handled in getVehicleInfoService()
-      // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 73');
-    } else {
-      console.error(err.name, 'JSON parse error', ' error 38');
-    }
-    return true;
-  }
-
-  return err || response.statusCode > config.minRetryStatusCodeValue;
-}
-
-let batteryEnergyService = (req, res) => {
-  // TODO *******************************************************
-  // refactor option selection out of this function
-  // ************************************************************
-  request({
-    url: 'http://gmapi.azurewebsites.net/getEnergyService',
-    json: true,
-    method: 'POST',
-    body: {"id": req.params.id, "responseType": "JSON"},
-    headers: { "Content-Type": "application/json" },
-
-    // The below parameters are specific to request-retry
-    maxAttempts: config.maxRetryForBackoff,
-    delayStrategy: exponentialBackOff,
-    retryStrategy: retryStrategy_battery,
-    fullResponse: true
-  })
-  .then(function (response) {
-    attempts = 0;
-    var data = {};
-    try {
-      // test for parsing vehicle info from GM's response
-      data = {
-        "percent": Math.round(response.body.data.batteryLevel.value)
-      }
-      // TODO *******************************************************
-      // even if valid JSON, need to check presence of all required properties
-      // ************************************************************
-    } catch(err) {
-      // can save err.stack to log file
-
-      // Smartcar response to clients
-      data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 17"};
-
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // "code" can be used for internal use
-      // ************************************************************
-    }
-    res.send(JSON.stringify( data ));
-  })
-  .catch(function(err) {
-    attempts = 0;
-    try {
-      res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "2"});
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // ************************************************************
-    } catch(err) {
-      console.error('no errno value')
-    }
-  })
-}
-
-
-function retryStrategy_engine(err, response, body){
-  if (typeof body !== "object") {
-    // console.log('body is undefined!');
-    return true;
-  }
-  if (err) {
-    // console.log('error occurred ', err);
-  }
-  try {
-    if (typeof body === "object") {
-      console.log('body.actionResult.status', body.actionResult.status);
-      var data = {
-        "status": (body.actionResult.status === 'EXECUTED') ? 'success' : 'error1'
-      }
-      // TODO *******************************************************
-      // refactor this resonse obj construction out of here
-      // ************************************************************
-    }
-  } catch(err) {
-    if ( err instanceof TypeError ) {
-      // error will be handled in getVehicleInfoService()
-      // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 12');
-    } else {
-      // console.error(err.name, 'JSON parse error', ' error 65');
-    }
-    return true;
-  }
-
-  return err || response.statusCode > config.minRetryStatusCodeValue;
-}
-
-
-let actionEngineService = (req, res) => {
-  // TODO *******************************************************
-  // refactor option selection out of this function
-  // ************************************************************
-  var command = req.body.action === 'START' ? 'START_VEHICLE' : 'STOP_VEHICLE';
-  request({
-    url: 'http://gmapi.azurewebsites.net/actionEngineService',
-    json: true,
-    method: 'POST',
-    body: {"id": req.params.id, "command": command, "responseType": "JSON"},
-    headers: { "Content-Type": "application/json" },
-
-    // The below parameters are specific to request-retry
-    maxAttempts: config.maxRetryForBackoff,
-    delayStrategy: exponentialBackOff,
-    retryStrategy: retryStrategy_engine,
-    fullResponse: true
-  })
-  .then(function (response) {
-    attempts = 0;
-    // console.log('response1', response.body);
-    var data = {};
-    try {
-      data = {
-        "status": (response.body.actionResult.status === 'EXECUTED') ? 'success' : 'error'
-      }
-      // TODO *******************************************************
-      // even if valid JSON, need to check presence of all required properties
-      // ************************************************************
-    } catch(err) {
-      // can save err.stack to log file
-
-      // Smartcar response to clients
-      data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 34"};
-
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // "code" can be used for internal use
-      // ************************************************************
-    }
-    res.send(JSON.stringify( data ));
-  })
-  .catch(function(err) {
-    attempts = 0;
-    try {
-      res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "62"});
-      // TODO *******************************************************
-      // create [error] response class & constructor
-      // ************************************************************
-    } catch(err) {
-      console.error('no errno value')
-    }
-  })
-}
-
-
- // function yourExportedFunction() {
- //     const p = promiseThatMightRejectFn();
- //     p.catch(() => {}); // add an empty catch handler
- //     return p;
- // }
-
-
-/**
- * @param   {Number} attempts The number of times that the request has been attempted.
- * @return  {Number} number of milliseconds to wait before retrying again the request.
- */
-// function getExponentialbackoffTime(attempts) {
-//   return (Math.pow(2, attempts) * 100) + Math.floor(Math.random() * 50);
-// }
-
-// function constructExponentialbackoffTimeStrategy() {
-//   let attempts = 0;
-//   return () => {
-//     attempts += 1;
-//     return getExponentialbackoffTime(attempts);
-//   };
-// }
-
-// async function myRetryStrategy(err, response, body){
-//   console.log('start');
-//   // await hasNoNetConnection();
-//   // JSON.parse(body);
-//   console.log('err', err);
-//   console.log('end');
-//   // retry the request if we had an error or if the response was a 'Bad Gateway'
-//   // return err || response.statusCode === 502;
-//   return true;
-// }
-
-// async function myRetryStrategy2(err, response, body){
-//   retry = await hasNoNetConnection();
-// }
-
-// function isValidResponse(body) {
-//   // retry the request if we had an error or if the response was a 'Bad Gateway'
-//   try {
-//     // var result = JSON.parse(JSON.stringify(body));
-//     var data = {
-//       "vin": body.data.vin.value,
-//       "color": body.data.color.value,
-//       "doorCount": body.data.fourDoorSedan.value ? 4 : 2,
-//       "driveTrain": body.data.driveTrain.value
-//     }
-//     console.log('data=', data);
-//     console.log('status = ', response.statusCode);
+// function retryDoor(err, response, body){
+//   if (typeof body !== "object") {
 //     return true;
-//   } catch (error) {
-//     console.log('return true');
-//     return false;
 //   }
+//   if (err) {
+//     // console.error('error occurred ', err.message);
+//   }
+//   try {
+//     if (typeof body === "object") {
+//       var data = [{
+//         "location": body.data.doors.values[0].location.value,
+//         "locked": body.data.doors.values[0].locked.value},
+//         {"location": body.data.doors.values[1].location.value,
+//         "locked": body.data.doors.values[1].locked.value
+//       }]
+//     }
+//       // TODO *******************************************************
+//       // refactor this resonse obj construction out of here
+//       // ************************************************************
+
+//   } catch(e) {
+//     if ( e instanceof TypeError ) {
+//       // error will be handled in getVehicleInfoService()
+//       // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 09');
+//     } else {
+//       console.error(err.name, 'JSON parse error', ' error 14');
+//     }
+//     return true;
+//   }
+
+//   return err || response.statusCode > config.minRetryStatusCodeValue;
+// }
+
+// let doorService = (req, res) => {
+//   // TODO *******************************************************
+//   // refactor option selection out of this function
+//   // ************************************************************
+//   request({
+//     url: 'http://http://orignServer/id/endpoint1',
+//     json: true,
+//     method: 'POST',
+//     body: {"id": req.params.id, "responseType": "JSON"},
+//     headers: { "Content-Type": "application/json" },
+
+//     // The below parameters are specific to request-retry
+//     maxAttempts: config.maxRetryForBackoff,
+//     delayStrategy: exponentialBackOff,
+//     retryStrategy: retryDoor,
+//     fullResponse: true // (default) To resolve the promise with the full response or just the body
+//   })
+//   .then(function (response) {
+//     attempts = 0;
+//     var data = {};
+//     try {
+//       // test for parsing vehicle info from orign server's response
+//       data = [{
+//         "location": response.body.data.doors.values[0].location.value,
+//         "locked": response.body.data.doors.values[0].locked.value},
+//         {"location": response.body.data.doors.values[1].location.value,
+//         "locked": response.body.data.doors.values[1].locked.value
+//       }]
+//       // TODO *******************************************************
+//       // even if valid JSON, need to check presence of all required properties
+//       // ************************************************************
+
+//     } catch(err) {
+//       // can save err.stack to log file
+//       // Smartcar response to clients
+//       data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 11"};
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // "code" can be used for internal use
+//       // ************************************************************
+//     }
+//     res.send(JSON.stringify( data ));
+//   })
+//   .catch(function(error) {
+//     attempts = 0;
+//     try {
+//       res.send({"status": "404", "errno": error.errno, "message": error.message, "code": "2"});
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // ************************************************************
+//     } catch(e) {
+//       console.error('no errno value')
+//     }
+//   })
 // }
 
 
-module.exports.vehicleInfoService = vehicleInfoService;
-module.exports.securityStatusService = securityStatusService;
-module.exports.energyService = energyService;
-module.exports.batteryEnergyService = batteryEnergyService
-module.exports.actionEngineService = actionEngineService
+// function retry_ener_fuel(err, response, body){
+//   // retry the request if we had an error or if the response was a 'Bad Gateway'
+//   if (typeof body !== "object") {
+//     // console.log('body is undefined!');
+//     return true;
+//   }
+//   if (err) {
+//     console.log('error occurred ', err);
+//   }
+//   try {
+//     if (typeof body === "object") {
+//       var data = {
+//         "percent": body.data.tankLevel.value
+//       }
+//     }
+//       // TODO *******************************************************
+//       // refactor this resonse obj construction out of here
+//       // ************************************************************
+
+//   } catch(e) {
+//   // } catch(err) {
+//     if ( err instanceof TypeError ) {
+//       // error will be handled in getVehicleInfoService()
+//       // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 12');
+//     } else {
+//       console.error(err.name, 'JSON parse error', ' error 05');
+//     }
+//     return true;
+//   }
+//   return err || response.statusCode > config.minRetryStatusCodeValue;
+// }
+
+
+// let enerService = (req, res) => {
+//   // TODO *******************************************************
+//   // refactor option selection out of this function
+//   // ************************************************************
+//   request({
+//     url: 'http://originServer/id/endpoint2',
+//     json: true,
+//     method: 'POST',
+//     body: {"id": req.params.id, "responseType": "JSON"},
+//     headers: { "Content-Type": "application/json" },
+//     // The below parameters are specific to request-retry
+//     maxAttempts: config.maxRetryForBackoff,
+//     delayStrategy: exponentialBackOff,
+//     retryStrategy: retry_ener_fuel,
+//     fullResponse: true
+//   })
+//   .then(function (response) {
+//     attempts = 0;
+//     var data = {};
+//     try {
+//       // TODO *******************************************************
+//       // even if valid JSON, need to check presence of all required properties
+//       // ************************************************************
+//       data = {
+//         "percent": Math.round(response.body.data.tankLevel.value)
+//       }
+//       // TODO *******************************************************
+//       // could also save battery data
+//       // ************************************************************
+//     } catch(e) {
+//       // can save err.stack to log file
+
+//       // Smartcar response to clients
+//       data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 20"};
+
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // "code" can be used for internal use
+//       // ************************************************************
+//     }
+//     res.send(JSON.stringify( data ));
+
+//   })
+//   .catch(function(err) {
+//     attempts = 0;
+//     try {
+//       res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "21"});
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // ************************************************************
+//     } catch(err) {
+//       console.error('no errno value')
+//     }
+//   })
+// }
+
+
+// function retryFuel(err, response, body){
+//   if (typeof body !== "object") {
+//     // console.log('body is undefined!');
+//     return true;
+//   }
+//   if (err) {
+//     console.log('error occurred ', err);
+//   }
+//   try {
+//     if (typeof body === "object") {
+//       var data = {
+//         "percent": body.data.batteryLevel.value
+//       }
+//       // TODO *******************************************************
+//       // refactor this resonse obj construction out of here
+//       // ************************************************************
+//     }
+//   } catch(err) {
+//     if ( err instanceof TypeError ) {
+//       // error will be handled in getVehicleInfoService()
+//       // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 73');
+//     } else {
+//       console.error(err.name, 'JSON parse error', ' error 38');
+//     }
+//     return true;
+//   }
+
+//   return err || response.statusCode > config.minRetryStatusCodeValue;
+// }
+
+// let fuelService = (req, res) => {
+//   // TODO *******************************************************
+//   // refactor option selection out of this function
+//   // ************************************************************
+//   request({
+//     url: 'http://originServer/id/endpoint3',
+//     json: true,
+//     method: 'POST',
+//     body: {"id": req.params.id, "responseType": "JSON"},
+//     headers: { "Content-Type": "application/json" },
+
+//     // The below parameters are specific to request-retry
+//     maxAttempts: config.maxRetryForBackoff,
+//     delayStrategy: exponentialBackOff,
+//     retryStrategy: retryFuel,
+//     fullResponse: true
+//   })
+//   .then(function (response) {
+//     attempts = 0;
+//     var data = {};
+//     try {
+//       // test for parsing vehicle info from orign server's response
+//       data = {
+//         "percent": Math.round(response.body.data.batteryLevel.value)
+//       }
+//       // TODO *******************************************************
+//       // even if valid JSON, need to check presence of all required properties
+//       // ************************************************************
+//     } catch(err) {
+//       // can save err.stack to log file
+
+//       // Smartcar response to clients
+//       data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 17"};
+
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // "code" can be used for internal use
+//       // ************************************************************
+//     }
+//     res.send(JSON.stringify( data ));
+//   })
+//   .catch(function(err) {
+//     attempts = 0;
+//     try {
+//       res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "2"});
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // ************************************************************
+//     } catch(err) {
+//       console.error('no errno value')
+//     }
+//   })
+// }
+
+
+// function retryStartStop(err, response, body){
+//   if (typeof body !== "object") {
+//     // console.log('body is undefined!');
+//     return true;
+//   }
+//   if (err) {
+//     // console.log('error occurred ', err);
+//   }
+//   try {
+//     if (typeof body === "object") {
+//       console.log('body.actionResult.status', body.actionResult.status);
+//       var data = {
+//         "status": (body.actionResult.status === 'EXECUTED') ? 'success' : 'error1'
+//       }
+//       // TODO *******************************************************
+//       // refactor this resonse obj construction out of here
+//       // ************************************************************
+//     }
+//   } catch(err) {
+//     if ( err instanceof TypeError ) {
+//       // error will be handled in getVehicleInfoService()
+//       // console.log('TypeError error', 'error', err.name, 'message', err.message, ' error 12');
+//     } else {
+//       // console.error(err.name, 'JSON parse error', ' error 65');
+//     }
+//     return true;
+//   }
+
+//   return err || response.statusCode > config.minRetryStatusCodeValue;
+// }
+
+
+// let startStopService = (req, res) => {
+//   // TODO *******************************************************
+//   // refactor option selection out of this function
+//   // ************************************************************
+//   var command = req.body.action === 'START' ? 'START_VEHICLE' : 'STOP_VEHICLE';
+//   request({
+//     url: 'http://originServer/id/endpoint3',
+//     json: true,
+//     method: 'POST',
+//     body: {"id": req.params.id, "command": command, "responseType": "JSON"},
+//     headers: { "Content-Type": "application/json" },
+
+//     // The below parameters are specific to request-retry
+//     maxAttempts: config.maxRetryForBackoff,
+//     delayStrategy: exponentialBackOff,
+//     retryStrategy: retryStartStop,
+//     fullResponse: true
+//   })
+//   .then(function (response) {
+//     attempts = 0;
+//     // console.log('response1', response.body);
+//     var data = {};
+//     try {
+//       data = {
+//         "status": (response.body.actionResult.status === 'EXECUTED') ? 'success' : 'error'
+//       }
+//       // TODO *******************************************************
+//       // even if valid JSON, need to check presence of all required properties
+//       // ************************************************************
+//     } catch(err) {
+//       // can save err.stack to log file
+
+//       // Smartcar response to clients
+//       data = {"status": "404", "error": err.name, "message": err.message, "code": "json parse error 34"};
+
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // "code" can be used for internal use
+//       // ************************************************************
+//     }
+//     res.send(JSON.stringify( data ));
+//   })
+//   .catch(function(err) {
+//     attempts = 0;
+//     try {
+//       res.send({"status": "404", "errno": err.errno, "message": err.message, "code": "62"});
+//       // TODO *******************************************************
+//       // create [error] response class & constructor
+//       // ************************************************************
+//     } catch(err) {
+//       console.error('no errno value')
+//     }
+//   })
+// }
+
+
+module.exports.infoService = infoService;
+// module.exports.doorService = doorService;
+// module.exports.enerService = enerService;
+// module.exports.fuelService = fuelService
+// module.exports.startStopService = startStopService

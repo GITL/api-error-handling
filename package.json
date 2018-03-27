@@ -1,7 +1,7 @@
 {
   "name": "api_error_handling",
-  "version": "1.0.0",
-  "description": "Smartcar Backend Coding Challenge",
+  "version": "1.1.0",
+  "description": "Implementing backoff for API requests",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
